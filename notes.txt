@@ -1,0 +1,29 @@
+- Un semáforo por casilla con S. Solo se deja pasar a un carril.
+- Choques cuando no hay semáforos. Si hay un choque se inhabilita la casilla (¿por tiempo?).
+- Reducción (más bien igualdad) de velocidad con carro inmediato. Si el inmediato tiene 0 entonces se detiene.
+- Destinos en medio de calle. ¿Borrar carro cuando llegue a destino?
+
+- L = izquierda
+- R = derecha
+- U = arriba
+- D = abajo
+- B = bloque
+- C = Carro
+
+- Inicialización
+    - Semáforos: max 48 min 0
+    - Carros: max ? min 1
+    - struct por casilla con dirección y una referencia a carro o Nil
+
+- Generar rutas:
+    - comenzar de una posición aleatoria
+    - avanzar entre 25 y 30 cuadritos
+    - no más de 2 giros en la misma dirección
+    - ¿guardar solo la opción de la intersección?
+
+
+{
+    tipo: char,
+    bool: on | off, 
+    int: 1 | 2 | 3 
+}
