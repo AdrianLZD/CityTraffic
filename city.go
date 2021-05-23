@@ -2,7 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
 	"math/rand"
 	"os"
 	"strings"
@@ -15,9 +14,12 @@ type Cell struct {
 }
 
 type Car struct {
-	id    byte
-	pos   int64
-	sleep int64
+	id    int
+	sleep int
+	pos   Cell
+	start Cell
+	end   Cell
+	route []string
 }
 
 var (
@@ -30,46 +32,46 @@ var (
 	}
 )
 
-func moveCar(car Car) {
+// func moveCar(car Car) {
 
-	for {
-		if cityMap[car.pos+1] == 0 {
-			cityMap[car.pos] = 0
-			car.pos += 1
-			cityMap[car.pos] = car.id
-			fmt.Printf("%d se movio a %d: ", car.id, car.pos)
-			fmt.Println(cityMap)
-			time.Sleep(time.Duration(car.sleep) * time.Millisecond)
-		}
-	}
+// 	for {
+// 		if cityMap[car.pos+1] == 0 {
+// 			cityMap[car.pos] = 0
+// 			car.pos += 1
+// 			cityMap[car.pos] = car.id
+// 			fmt.Printf("%d se movio a %d: ", car.id, car.pos)
+// 			fmt.Println(cityMap)
+// 			time.Sleep(time.Duration(car.sleep) * time.Millisecond)
+// 		}
+// 	}
 
-}
+// }
 
-func test() {
+// func test() {
 
-	var car1 = Car{
-		id:    1,
-		pos:   3,
-		sleep: 1000,
-	}
+// 	var car1 = Car{
+// 		id:    1,
+// 		pos:   3,
+// 		sleep: 1000,
+// 	}
 
-	var car2 = Car{
-		id:    2,
-		pos:   5,
-		sleep: 1200,
-	}
+// 	var car2 = Car{
+// 		id:    2,
+// 		pos:   5,
+// 		sleep: 1200,
+// 	}
 
-	cityMap[car1.pos] = 1
-	cityMap[car2.pos] = 0
+// 	cityMap[car1.pos] = 1
+// 	cityMap[car2.pos] = 0
 
-	go moveCar(car1)
-	go moveCar(car2)
+// 	go moveCar(car1)
+// 	go moveCar(car2)
 
-	for {
+// 	for {
 
-	}
+// 	}
 
-}
+// }
 
 func csvToArray(path string) ([][]string, error) {
 
@@ -212,10 +214,24 @@ func main() {
 	// test()
 
 	// Read grid file
-	grid, _ := csvToArray("grid.txt")
+	generationGrid, _ := csvToArray("grid.txt")
 
-	// Generate
-	route, start, end := generateRoute(grid)
-	fmt.Println(start, route, end)
+	// [TODO]: Initialize simulation grid
+
+	// Initialize cars
+	numCars := 5
+	cars := make([]Car, numCars)
+	for i := 0; i < numCars; i++ {
+		route, start, end := generateRoute(generationGrid)
+		cars[i] = Car{
+			id:    i,
+			sleep: rand.Intn(3000-1000) + 1000,
+			pos:   start,
+			start: start,
+			end:   end,
+			route: route,
+		}
+		//fmt.Println(cars[i])
+	}
 
 }
