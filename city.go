@@ -19,7 +19,10 @@ type Car struct {
 	pos   Cell
 	start Cell
 	end   Cell
+	gridPos Cell
 	route []string
+	routeIndex  int
+	active bool
 }
 
 var (
@@ -30,7 +33,9 @@ var (
 		"L": {{"U"}, {"L", "L"}, {"L", "D", "D"}},
 		"U": {{"R"}, {"U", "U"}, {"U", "L", "L"}},
 	}
+	usedStartPos = make(map[Cell]bool)
 )
+
 
 // func moveCar(car Car) {
 
@@ -100,10 +105,10 @@ func generateRoute(grid [][]string) ([]string, Cell, Cell) {
 
 	// Get random initial position
 	start := Cell{rand.Intn(len(grid)), rand.Intn(len(grid[0]))}
-	for grid[start.y][start.x] == "B" || grid[start.y][start.x] == "S" {
+	for grid[start.y][start.x] == "B" || grid[start.y][start.x] == "S" || usedStartPos[start] {
 		start = Cell{rand.Intn(len(grid)), rand.Intn(len(grid[0]))}
 	}
-
+	usedStartPos[start] = true
 	// Travel randomly following street directions
 	var route []string
 	var steps []string
@@ -216,22 +221,25 @@ func main() {
 	// Read grid file
 	generationGrid, _ := csvToArray("grid.txt")
 
-	// [TODO]: Initialize simulation grid
-
 	// Initialize cars
-	numCars := 5
+	numCars := 30
 	cars := make([]Car, numCars)
 	for i := 0; i < numCars; i++ {
 		route, start, end := generateRoute(generationGrid)
 		cars[i] = Car{
-			id:    i,
-			sleep: rand.Intn(3000-1000) + 1000,
+			id:    i + 1,
+			sleep: rand.Intn(20-10) + 10,
 			pos:   start,
 			start: start,
 			end:   end,
+			gridPos: Cell{start.x * CellSize, start.y * CellSize},
 			route: route,
+			routeIndex: -1,
+			active: true,
 		}
 		//fmt.Println(cars[i])
 	}
 
+	// Method from simulation.go
+	initCity(cars)
 }
