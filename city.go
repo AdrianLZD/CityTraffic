@@ -14,19 +14,18 @@ type Cell struct {
 }
 
 type Car struct {
-	id    int
-	sleep int
-	pos   Cell
-	start Cell
-	end   Cell
-	gridPos Cell
-	route []string
-	routeIndex  int
-	active bool
+	id         int
+	sleep      int
+	pos        Cell
+	start      Cell
+	end        Cell
+	gridPos    Cell
+	route      []string
+	routeIndex int
+	active     bool
 }
 
 var (
-	cityMap           [30]byte
 	intersectionPaths = map[string][][]string{
 		"R": {{"D"}, {"R", "R"}, {"R", "U", "U"}},
 		"D": {{"L"}, {"D", "D"}, {"D", "R", "R"}},
@@ -35,48 +34,6 @@ var (
 	}
 	usedStartPos = make(map[Cell]bool)
 )
-
-
-// func moveCar(car Car) {
-
-// 	for {
-// 		if cityMap[car.pos+1] == 0 {
-// 			cityMap[car.pos] = 0
-// 			car.pos += 1
-// 			cityMap[car.pos] = car.id
-// 			fmt.Printf("%d se movio a %d: ", car.id, car.pos)
-// 			fmt.Println(cityMap)
-// 			time.Sleep(time.Duration(car.sleep) * time.Millisecond)
-// 		}
-// 	}
-
-// }
-
-// func test() {
-
-// 	var car1 = Car{
-// 		id:    1,
-// 		pos:   3,
-// 		sleep: 1000,
-// 	}
-
-// 	var car2 = Car{
-// 		id:    2,
-// 		pos:   5,
-// 		sleep: 1200,
-// 	}
-
-// 	cityMap[car1.pos] = 1
-// 	cityMap[car2.pos] = 0
-
-// 	go moveCar(car1)
-// 	go moveCar(car2)
-
-// 	for {
-
-// 	}
-
-// }
 
 func csvToArray(path string) ([][]string, error) {
 
@@ -109,6 +66,7 @@ func generateRoute(grid [][]string) ([]string, Cell, Cell) {
 		start = Cell{rand.Intn(len(grid)), rand.Intn(len(grid[0]))}
 	}
 	usedStartPos[start] = true
+
 	// Travel randomly following street directions
 	var route []string
 	var steps []string
@@ -216,8 +174,6 @@ func getLastPosition(x int, y int, lastDir string) Cell {
 
 func main() {
 
-	// test()
-
 	// Read grid file
 	generationGrid, _ := csvToArray("grid.txt")
 
@@ -227,17 +183,16 @@ func main() {
 	for i := 0; i < numCars; i++ {
 		route, start, end := generateRoute(generationGrid)
 		cars[i] = Car{
-			id:    i + 1,
-			sleep: rand.Intn(20-10) + 10,
-			pos:   start,
-			start: start,
-			end:   end,
-			gridPos: Cell{start.x * CellSize, start.y * CellSize},
-			route: route,
+			id:         i + 1,
+			sleep:      rand.Intn(20-10) + 10,
+			pos:        start,
+			start:      start,
+			end:        end,
+			gridPos:    Cell{start.x * CellSize, start.y * CellSize},
+			route:      route,
 			routeIndex: -1,
-			active: true,
+			active:     true,
 		}
-		//fmt.Println(cars[i])
 	}
 
 	// Method from simulation.go

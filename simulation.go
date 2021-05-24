@@ -1,10 +1,11 @@
 package main
 
 import (
+	"fmt"
 	_ "image/png"
 	"log"
 	"time"
-	"fmt"
+
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 )
@@ -12,17 +13,17 @@ import (
 type Game struct{}
 
 const (
-	GUIHeight = 616
-	GUIWidth  = 616
-	CellSize  = 22
+	GUIHeight     = 616
+	GUIWidth      = 616
+	CellSize      = 22
 	StartWaitTime = 4000
 )
 
 var (
 	imgBackground *ebiten.Image
-	imgCar *ebiten.Image
-	cars []Car
-	grid [28][28]int
+	imgCar        *ebiten.Image
+	cars          []Car
+	grid          [28][28]int
 )
 
 func init() {
@@ -51,16 +52,16 @@ func moveCar(car Car) {
 	time.Sleep(time.Duration(StartWaitTime) * time.Millisecond)
 	for {
 		posToGrid := Cell{car.pos.x * CellSize, car.pos.y * CellSize}
-		
+
 		//The car has reached the desired position, receive next instruction
-		if posToGrid == car.gridPos{
+		if posToGrid == car.gridPos {
 			car.routeIndex += 1
 
 			//If the route is over, exit the loop
-			if car.routeIndex >= len(car.route){
+			if car.routeIndex >= len(car.route) {
 				grid[car.pos.y][car.pos.x] = 0
 				break
-			}	
+			}
 
 			//Free the previous cell [TODO] FIX?
 			grid[car.pos.y][car.pos.x] = car.id
@@ -78,11 +79,11 @@ func moveCar(car Car) {
 
 			//Occupy the new cell [TODO] FIX?
 			grid[car.pos.y][car.pos.x] = car.id
-			
+
 		}
 
 		// Do not move car if the next cell is not yours [TODO] FIX
-		if grid[car.pos.y][car.pos.x] == car.id  {
+		if grid[car.pos.y][car.pos.x] == car.id {
 			switch car.route[car.routeIndex] {
 			case "U":
 				car.gridPos.y -= 1
@@ -94,13 +95,13 @@ func moveCar(car Car) {
 				car.gridPos.x -= 1
 			}
 
-		// Try to occupy the needed cell [TODO] FIX
-		}else if grid[car.pos.y][car.pos.x] == 0 {
+			// Try to occupy the needed cell [TODO] FIX
+		} else if grid[car.pos.y][car.pos.x] == 0 {
 			grid[car.pos.y][car.pos.x] = car.id
 		}
-		
+
 		//Update the cars array to reflect changes
-		cars[car.id-1] = car		
+		cars[car.id-1] = car
 
 		//Do not run every tick
 		time.Sleep(time.Duration(car.sleep) * time.Millisecond)
@@ -147,12 +148,12 @@ func initCity(newCars []Car) {
 		go moveCar(cars[i])
 	}
 	/*
-	for i := range grid{
-		fmt.Println(grid[i])
-	}*/
-	
+		for i := range grid{
+			fmt.Println(grid[i])
+		}*/
+
 	if err := ebiten.RunGame(&Game{}); err != nil {
 		log.Fatal(err)
 	}
-	
+
 }
