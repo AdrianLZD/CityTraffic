@@ -64,7 +64,7 @@ func moveCar(car Car) {
 			}
 
 			//Free the previous cell [TODO] FIX?
-			grid[car.pos.y][car.pos.x] = car.id
+			grid[car.pos.y][car.pos.x] = 0
 
 			switch car.route[car.routeIndex] {
 			case "U":
