@@ -21,7 +21,7 @@ const (
 
 var (
 	imgBackground *ebiten.Image
-	imgCar        *ebiten.Image
+	carSprites    map[string]*ebiten.Image
 	cars          []Car
 	grid          [28][28]int
 )
@@ -39,11 +39,30 @@ func loadImages() error {
 	if err != nil {
 		return err
 	}
-
-	imgCar, _, err = ebitenutil.NewImageFromFile("res/car.png")
+	carSprites = make(map[string]*ebiten.Image)
+	imgCarU, _, err := ebitenutil.NewImageFromFile("res/carU.png")
 	if err != nil {
 		return err
 	}
+	carSprites["U"] = imgCarU
+
+	imgCarR, _, err := ebitenutil.NewImageFromFile("res/carR.png")
+	if err != nil {
+		return err
+	}
+	carSprites["R"] = imgCarR
+
+	imgCarD, _, err := ebitenutil.NewImageFromFile("res/carD.png")
+	if err != nil {
+		return err
+	}
+	carSprites["D"] = imgCarD
+
+	imgCarL, _, err := ebitenutil.NewImageFromFile("res/carL.png")
+	if err != nil {
+		return err
+	}
+	carSprites["L"] = imgCarL
 
 	return nil
 }
@@ -129,7 +148,11 @@ func drawCars(screen *ebiten.Image) {
 			options.GeoM.Translate(
 				float64(cars[i].gridPos.x),
 				float64(cars[i].gridPos.y))
-			screen.DrawImage(imgCar, options)
+			sprite := cars[i].routeIndex
+			if sprite < 0 {
+				sprite = 0
+			}
+			screen.DrawImage(carSprites[cars[i].route[sprite]], options)
 		}
 	}
 }
