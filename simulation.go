@@ -77,12 +77,13 @@ func moveCar(car Car) {
 				car.pos.x -= 1
 			}
 
-			//Occupy the new cell [TODO] FIX?
-			grid[car.pos.y][car.pos.x] = car.id
-
+			//Occupy the new cell if possible
+			if grid[car.pos.y][car.pos.x] == 0 {
+				grid[car.pos.y][car.pos.x] = car.id
+			}
 		}
 
-		// Do not move car if the next cell is not yours [TODO] FIX
+		// Do not move car if the next cell is not yours
 		if grid[car.pos.y][car.pos.x] == car.id {
 			switch car.route[car.routeIndex] {
 			case "U":
@@ -95,7 +96,7 @@ func moveCar(car Car) {
 				car.gridPos.x -= 1
 			}
 
-			// Try to occupy the needed cell [TODO] FIX
+			// Try to occupy the needed cell
 		} else if grid[car.pos.y][car.pos.x] == 0 {
 			grid[car.pos.y][car.pos.x] = car.id
 		}
