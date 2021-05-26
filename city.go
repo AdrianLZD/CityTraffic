@@ -16,6 +16,7 @@ type Cell struct {
 type Car struct {
 	id         int
 	sleep      int
+	prevPos    Cell
 	pos        Cell
 	start      Cell
 	end        Cell
@@ -23,6 +24,7 @@ type Car struct {
 	route      []string
 	routeIndex int
 	active     bool
+	inCrossing bool
 }
 
 type TrafficLight struct {
@@ -42,24 +44,24 @@ var (
 	usedStartPos           = make(map[Cell]bool)
 	trafficLightsPositions = [][]Cell{
 		// Two at the top
-		{{9, 1}, {10, 1}, {9, 2}, {10, 2}},
-		{{17, 1}, {18, 1}, {17, 2}, {18, 2}},
+		{{10, 1}, {9, 2}, {10, 2}},
+		{{18, 1}, {17, 2}, {18, 2}},
 
 		// Four in the top middle
-		{{1, 9}, {2, 9}, {1, 10}, {2, 10}},
+		{{1, 9}, {2, 9}, {2, 10}},
 		{{9, 9}, {10, 9}, {9, 10}, {10, 10}},
 		{{17, 9}, {18, 9}, {17, 10}, {18, 10}},
-		{{25, 9}, {26, 9}, {25, 10}, {26, 10}},
+		{{25, 9}, {25, 10}, {26, 10}},
 
 		// Four in the bottom middle
-		{{1, 17}, {2, 17}, {1, 18}, {2, 18}},
+		{{1, 17}, {2, 17}, {2, 18}},
 		{{9, 17}, {10, 17}, {9, 18}, {10, 18}},
 		{{17, 17}, {18, 17}, {17, 18}, {18, 18}},
-		{{25, 17}, {26, 17}, {25, 18}, {26, 18}},
+		{{25, 17}, {25, 18}, {26, 18}},
 
 		// Two at the bottom
-		{{9, 25}, {10, 25}, {9, 26}, {10, 26}},
-		{{17, 25}, {18, 25}, {17, 26}, {18, 26}},
+		{{9, 25}, {10, 25}, {9, 26}},
+		{{17, 25}, {18, 25}, {17, 26}},
 	}
 )
 
@@ -213,6 +215,7 @@ func main() {
 		cars[i] = Car{
 			id:         i + 1,
 			sleep:      rand.Intn(20-10) + 10,
+			prevPos:    start,
 			pos:        start,
 			start:      start,
 			end:        end,
@@ -220,6 +223,7 @@ func main() {
 			route:      route,
 			routeIndex: -1,
 			active:     true,
+			inCrossing: false,
 		}
 	}
 

@@ -85,11 +85,10 @@ func moveCar(car Car) {
 
 			//If the route is over, exit the loop
 			if car.routeIndex >= len(car.route) {
-				grid[car.pos.y][car.pos.x] = 0
 				break
 			}
 
-			prevCell := Cell{car.pos.x, car.pos.y}
+			car.prevPos = Cell{car.pos.x, car.pos.y}
 
 			switch car.route[car.routeIndex] {
 			case "U":
@@ -101,16 +100,24 @@ func moveCar(car Car) {
 			case "L":
 				car.pos.x -= 1
 			}
+		}
 
-			//Occupy the new cell if possible, and free the previous one
-			if grid[car.pos.y][car.pos.x] == 0 {
-				grid[prevCell.y][prevCell.x] = 0
-				grid[car.pos.y][car.pos.x] = car.id
+		// Try to occupy the needed cell
+		if grid[car.pos.y][car.pos.x] == 0 {
+			// If car was in a crossing, it cannot override the traffic light cell
+			if !car.inCrossing {
+				grid[car.prevPos.y][car.prevPos.x] = 0
 			}
+			car.inCrossing = false
+			grid[car.pos.y][car.pos.x] = car.id
+
+		} else if grid[car.pos.y][car.pos.x] == -1 && !car.inCrossing {
+			car.inCrossing = true
+			grid[car.prevPos.y][car.prevPos.x] = 0
 		}
 
 		// Do not move car if the next cell is not yours
-		if grid[car.pos.y][car.pos.x] == car.id {
+		if grid[car.pos.y][car.pos.x] == car.id || car.inCrossing {
 			switch car.route[car.routeIndex] {
 			case "U":
 				car.gridPos.y -= 1
@@ -121,25 +128,41 @@ func moveCar(car Car) {
 			case "L":
 				car.gridPos.x -= 1
 			}
-
-			// Try to occupy the needed cell
-		} else if grid[car.pos.y][car.pos.x] == 0 {
-			grid[car.pos.y][car.pos.x] = car.id
+			// [TODO] Fix collisions inside the intersection...
 		}
 
-		//Update the cars array to reflect changes
+		// Update the cars array to reflect changes
 		cars[car.id-1] = car
 
-		//Do not run every tick
+		// Controls the car's speed
 		time.Sleep(time.Duration(car.sleep) * time.Millisecond)
 	}
 
+	grid[car.pos.y][car.pos.x] = 0
 	car.active = false
 	cars[car.id-1] = car
 }
 
 func changeTrafficLight(tLight TrafficLight) {
+	time.Sleep(time.Duration(StartWaitTime) * time.Millisecond)
+	for {
+		if tLight.activeCell >= len(tLight.cells) {
+			tLight.activeCell = 0
+		}
 
+		for i := 0; i < len(tLight.cells); i++ {
+			if i != tLight.activeCell {
+				grid[tLight.cells[i].y][tLight.cells[i].x] = -2
+			} else {
+				grid[tLight.cells[i].y][tLight.cells[i].x] = -1
+			}
+		}
+
+		trafficLights[tLight.id-1] = tLight
+
+		tLight.activeCell += 1
+		time.Sleep(time.Duration(tLight.sleep) * time.Millisecond)
+	}
 }
 
 func (g *Game) Update() error {
@@ -173,12 +196,15 @@ func drawTrafficLights(screen *ebiten.Image) {
 	var options *ebiten.DrawImageOptions
 	for i := 0; i < len(trafficLights); i++ {
 		for j := 0; j < len(trafficLights[i].cells); j++ {
-			options = new(ebiten.DrawImageOptions)
-			options.GeoM.Translate(
-				float64(trafficLights[i].cells[j].x*CellSize),
-				float64(trafficLights[i].cells[j].y*CellSize),
-			)
-			screen.DrawImage(imgLight, options)
+			if grid[trafficLights[i].cells[j].y][trafficLights[i].cells[j].x] == -2 {
+				options = new(ebiten.DrawImageOptions)
+				options.GeoM.Translate(
+					float64(trafficLights[i].cells[j].x*CellSize),
+					float64(trafficLights[i].cells[j].y*CellSize),
+				)
+				screen.DrawImage(imgLight, options)
+			}
+
 		}
 	}
 }
@@ -202,19 +228,45 @@ func initCity(newCars []Car, tLights []TrafficLight) {
 
 	// Start all the traffic lights cells
 	for i := 0; i < len(trafficLights); i++ {
-		for j := 0; j < len(trafficLights[i].cells); j++ {
-			grid[trafficLights[i].cells[j].x][trafficLights[i].cells[j].y] = -1
+		lenCells := len(trafficLights[i].cells)
+
+		xMap := make(map[int]int)
+		yMap := make(map[int]int)
+
+		for j := 0; j < lenCells; j++ {
+			xMap[trafficLights[i].cells[j].x] += 1
+			yMap[trafficLights[i].cells[j].y] += 1
+			grid[trafficLights[i].cells[j].y][trafficLights[i].cells[j].x] = -2
 		}
+
+		// Fill missing intersection cell with a "free" space
+		if lenCells < 4 {
+			xCoord := 0
+			yCoord := 0
+			for k, v := range xMap {
+				if v == 1 {
+					xCoord = k
+					break
+				}
+			}
+			for k, v := range yMap {
+				if v == 1 {
+					yCoord = k
+					break
+				}
+			}
+			grid[yCoord][xCoord] = -1
+		}
+
 		go changeTrafficLight(trafficLights[i])
 	}
-	/*
-		for i := range grid{
-			fmt.Println(grid[i])
-		}
-	*/
 
 	if err := ebiten.RunGame(&Game{}); err != nil {
 		log.Fatal(err)
+	}
+
+	for i := range grid {
+		fmt.Println(grid[i])
 	}
 
 }
