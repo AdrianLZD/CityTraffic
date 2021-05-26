@@ -26,6 +26,7 @@ var (
 	cars          []Car
 	trafficLights []TrafficLight
 	grid          [28][28]int
+	gridTLights   [28][28]int
 )
 
 func init() {
@@ -100,20 +101,22 @@ func moveCar(car Car) {
 			case "L":
 				car.pos.x -= 1
 			}
+
 		}
 
-		// Try to occupy the needed cell
-		if grid[car.pos.y][car.pos.x] == 0 {
-			// If car was in a crossing, it cannot override the traffic light cell
-			if !car.inCrossing {
-				grid[car.prevPos.y][car.prevPos.x] = 0
-			}
-			car.inCrossing = false
-			grid[car.pos.y][car.pos.x] = car.id
-
-		} else if grid[car.pos.y][car.pos.x] == -1 && !car.inCrossing {
+		// Check if the traffic light is open
+		if gridTLights[car.pos.y][car.pos.x] == 1 {
 			car.inCrossing = true
+		} else if gridTLights[car.pos.y][car.pos.x] == 0 {
+			car.inCrossing = false
+		}
+
+		/*Try to occupy the needed cell.
+		If the car is already in a crossing it will try to move
+		until it exit the intersection*/
+		if grid[car.pos.y][car.pos.x] == 0 && (gridTLights[car.pos.y][car.pos.x] == 0 || car.inCrossing) {
 			grid[car.prevPos.y][car.prevPos.x] = 0
+			grid[car.pos.y][car.pos.x] = car.id
 		}
 
 		// Do not move car if the next cell is not yours
@@ -128,7 +131,6 @@ func moveCar(car Car) {
 			case "L":
 				car.gridPos.x -= 1
 			}
-			// [TODO] Fix collisions inside the intersection...
 		}
 
 		// Update the cars array to reflect changes
@@ -152,9 +154,9 @@ func changeTrafficLight(tLight TrafficLight) {
 
 		for i := 0; i < len(tLight.cells); i++ {
 			if i != tLight.activeCell {
-				grid[tLight.cells[i].y][tLight.cells[i].x] = -2
+				gridTLights[tLight.cells[i].y][tLight.cells[i].x] = 2
 			} else {
-				grid[tLight.cells[i].y][tLight.cells[i].x] = -1
+				gridTLights[tLight.cells[i].y][tLight.cells[i].x] = 1
 			}
 		}
 
@@ -196,7 +198,7 @@ func drawTrafficLights(screen *ebiten.Image) {
 	var options *ebiten.DrawImageOptions
 	for i := 0; i < len(trafficLights); i++ {
 		for j := 0; j < len(trafficLights[i].cells); j++ {
-			if grid[trafficLights[i].cells[j].y][trafficLights[i].cells[j].x] == -2 {
+			if gridTLights[trafficLights[i].cells[j].y][trafficLights[i].cells[j].x] == 2 {
 				options = new(ebiten.DrawImageOptions)
 				options.GeoM.Translate(
 					float64(trafficLights[i].cells[j].x*CellSize),
@@ -236,7 +238,7 @@ func initCity(newCars []Car, tLights []TrafficLight) {
 		for j := 0; j < lenCells; j++ {
 			xMap[trafficLights[i].cells[j].x] += 1
 			yMap[trafficLights[i].cells[j].y] += 1
-			grid[trafficLights[i].cells[j].y][trafficLights[i].cells[j].x] = -2
+			gridTLights[trafficLights[i].cells[j].y][trafficLights[i].cells[j].x] = 2
 		}
 
 		// Fill missing intersection cell with a "free" space
@@ -255,7 +257,7 @@ func initCity(newCars []Car, tLights []TrafficLight) {
 					break
 				}
 			}
-			grid[yCoord][xCoord] = -1
+			gridTLights[yCoord][xCoord] = 1
 		}
 
 		go changeTrafficLight(trafficLights[i])
