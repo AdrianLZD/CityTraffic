@@ -21,8 +21,10 @@ const (
 
 var (
 	imgBackground *ebiten.Image
+	imgLight      *ebiten.Image
 	carSprites    map[string]*ebiten.Image
 	cars          []Car
+	trafficLights []TrafficLight
 	grid          [28][28]int
 )
 
@@ -64,6 +66,11 @@ func loadImages() error {
 	}
 	carSprites["L"] = imgCarL
 
+	imgLight, _, err = ebitenutil.NewImageFromFile("res/trafficLight.png")
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -82,8 +89,7 @@ func moveCar(car Car) {
 				break
 			}
 
-			//Free the previous cell [TODO] FIX?
-			grid[car.pos.y][car.pos.x] = 0
+			prevCell := Cell{car.pos.x, car.pos.y}
 
 			switch car.route[car.routeIndex] {
 			case "U":
@@ -96,8 +102,9 @@ func moveCar(car Car) {
 				car.pos.x -= 1
 			}
 
-			//Occupy the new cell if possible
+			//Occupy the new cell if possible, and free the previous one
 			if grid[car.pos.y][car.pos.x] == 0 {
+				grid[prevCell.y][prevCell.x] = 0
 				grid[car.pos.y][car.pos.x] = car.id
 			}
 		}
@@ -131,6 +138,10 @@ func moveCar(car Car) {
 	cars[car.id-1] = car
 }
 
+func changeTrafficLight(tLight TrafficLight) {
+
+}
+
 func (g *Game) Update() error {
 	return nil
 }
@@ -138,6 +149,7 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(imgBackground, nil)
 	drawCars(screen)
+	drawTrafficLights(screen)
 }
 
 func drawCars(screen *ebiten.Image) {
@@ -157,24 +169,49 @@ func drawCars(screen *ebiten.Image) {
 	}
 }
 
+func drawTrafficLights(screen *ebiten.Image) {
+	var options *ebiten.DrawImageOptions
+	for i := 0; i < len(trafficLights); i++ {
+		for j := 0; j < len(trafficLights[i].cells); j++ {
+			options = new(ebiten.DrawImageOptions)
+			options.GeoM.Translate(
+				float64(trafficLights[i].cells[j].x*CellSize),
+				float64(trafficLights[i].cells[j].y*CellSize),
+			)
+			screen.DrawImage(imgLight, options)
+		}
+	}
+}
+
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return GUIWidth, GUIHeight
 }
 
-func initCity(newCars []Car) {
+func initCity(newCars []Car, tLights []TrafficLight) {
 	cars = newCars
+	trafficLights = tLights
 	ebiten.SetWindowSize(GUIWidth, GUIHeight)
 	ebiten.SetWindowTitle("City Traffic")
 	fmt.Println("City")
 
+	// Let the cars occupy their initial cell
 	for i := 0; i < len(cars); i++ {
 		grid[cars[i].pos.y][cars[i].pos.x] = cars[i].id
 		go moveCar(cars[i])
 	}
+
+	// Start all the traffic lights cells
+	for i := 0; i < len(trafficLights); i++ {
+		for j := 0; j < len(trafficLights[i].cells); j++ {
+			grid[trafficLights[i].cells[j].x][trafficLights[i].cells[j].y] = -1
+		}
+		go changeTrafficLight(trafficLights[i])
+	}
 	/*
 		for i := range grid{
 			fmt.Println(grid[i])
-		}*/
+		}
+	*/
 
 	if err := ebiten.RunGame(&Game{}); err != nil {
 		log.Fatal(err)
