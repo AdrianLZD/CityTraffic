@@ -32,11 +32,10 @@ type Car struct {
 }
 
 type TrafficLight struct {
-	id          int
-	cells       []Cell
-	activeCell  int
-	missingCell int
-	sleep       int
+	id         int
+	cells      []Cell
+	activeCell int
+	sleep      int
 }
 
 var (
@@ -92,7 +91,6 @@ func csvToArray(path string) ([][]string, error) {
 func generateRoute(grid [][]string) ([]string, Cell, Cell) {
 
 	// Get random route with length [25, 30]
-	rand.Seed(time.Now().UnixNano())
 	length := rand.Intn(50-45) + 45
 
 	// Get random initial position
@@ -188,7 +186,6 @@ func getIntersectionSteps(grid [][]string, x int, y int, lastDir string) []strin
 		}
 	}
 
-	rand.Seed(time.Now().UnixNano())
 	return intersectionPaths[lastDir][validOptions[rand.Intn(len(validOptions))]]
 
 }
@@ -244,6 +241,9 @@ func main() {
 	// Read grid file
 	generationGrid, _ := csvToArray("grid.txt")
 
+	//Seed for random numbers
+	rand.Seed(time.Now().UnixNano())
+
 	// Initialize cars
 	cars := make([]Car, numCars)
 	for i := 0; i < numCars; i++ {
@@ -273,12 +273,7 @@ func main() {
 			id:         i + 1,
 			cells:      trafficLightsPositions[i],
 			activeCell: 0,
-			/* No traffic light has a cell missing by its own,
-			a missing cell it is determined by the simulation space.
-			Therefore, it needs to be set up while initializing a city.
-			*/
-			missingCell: -1,
-			sleep:       3000,
+			sleep:      3000,
 		}
 	}
 
