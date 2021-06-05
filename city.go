@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"fmt"
+	"math"
 	"math/rand"
 	"os"
 	"strings"
@@ -14,17 +16,18 @@ type Cell struct {
 }
 
 type Car struct {
-	id         int
-	sleep      int
-	prevPos    Cell
-	pos        Cell
-	start      Cell
-	end        Cell
-	gridPos    Cell
-	route      []string
-	routeIndex int
-	active     bool
-	inCrossing bool
+	id            int
+	sleep         int
+	originalSleep int
+	prevPos       Cell
+	pos           Cell
+	start         Cell
+	end           Cell
+	gridPos       Cell
+	route         []string
+	routeIndex    int
+	active        bool
+	inCrossing    bool
 }
 
 type TrafficLight struct {
@@ -212,19 +215,22 @@ func main() {
 	cars := make([]Car, numCars)
 	for i := 0; i < numCars; i++ {
 		route, start, end := generateRoute(generationGrid)
+		speed := rand.Intn(30-5) + 5
 		cars[i] = Car{
-			id:         i + 1,
-			sleep:      rand.Intn(20-10) + 10,
-			prevPos:    start,
-			pos:        start,
-			start:      start,
-			end:        end,
-			gridPos:    Cell{start.x * CellSize, start.y * CellSize},
-			route:      route,
-			routeIndex: -1,
-			active:     true,
-			inCrossing: false,
+			id:            i + 1,
+			sleep:         speed,
+			originalSleep: speed,
+			prevPos:       start,
+			pos:           start,
+			start:         start,
+			end:           end,
+			gridPos:       Cell{start.x * CellSize, start.y * CellSize},
+			route:         route,
+			routeIndex:    -1,
+			active:        true,
+			inCrossing:    false,
 		}
+		fmt.Printf("[Car %v]: Original speed %v\n", i, math.Abs(float64(speed-30)))
 	}
 
 	numLights := 12

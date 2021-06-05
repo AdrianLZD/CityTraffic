@@ -4,6 +4,7 @@ import (
 	"fmt"
 	_ "image/png"
 	"log"
+	"math"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -102,6 +103,23 @@ func moveCar(car Car) {
 				car.pos.x -= 1
 			}
 
+			if car.routeIndex+1 < len(car.route) {
+				// Id there is no car in advance and speed had been reduced return to original speed
+				nextPos := getNextPos(car)
+				if nextPos == 0 && car.sleep != car.originalSleep {
+					fmt.Printf("[Car %v]: Speed %v <- %v\n", car.id, math.Abs(float64(car.sleep-30)), math.Abs(float64(car.originalSleep-30)))
+					car.sleep = car.originalSleep
+				}
+			}
+
+		} else if car.routeIndex+1 < len(car.route) {
+			// Verify if next position in route has a slower car to slow in advance
+			nextPos := getNextPos(car)
+			if nextPos != 0 && car.sleep < cars[nextPos-1].sleep {
+				newSleep := cars[nextPos-1].sleep
+				fmt.Printf("[Car %v]: Speed %v -> %v\n", car.id, math.Abs(float64(car.sleep-30)), math.Abs(float64(newSleep-30)))
+				car.sleep = newSleep
+			}
 		}
 
 		// Check if the traffic light is open
@@ -117,10 +135,14 @@ func moveCar(car Car) {
 		if grid[car.pos.y][car.pos.x] == 0 && (gridTLights[car.pos.y][car.pos.x] == 0 || car.inCrossing) {
 			grid[car.prevPos.y][car.prevPos.x] = 0
 			grid[car.pos.y][car.pos.x] = car.id
-		}
+		} /*else if grid[car.pos.y][car.pos.x] != 0 && car.sleep < cars[grid[car.pos.y][car.pos.x]-1].sleep {
+			newSleep := cars[grid[car.pos.y][car.pos.x]-1].sleep
+			fmt.Printf("[Car %v]: Speed %v -> %v\n", car.id, math.Abs(float64(car.sleep-30)), math.Abs(float64(newSleep-30)))
+			car.sleep = newSleep
+		}*/
 
 		// Do not move car if the next cell is not yours
-		if grid[car.pos.y][car.pos.x] == car.id || car.inCrossing {
+		if grid[car.pos.y][car.pos.x] == car.id /*|| car.inCrossing*/ {
 			switch car.route[car.routeIndex] {
 			case "U":
 				car.gridPos.y -= 1
@@ -165,6 +187,23 @@ func changeTrafficLight(tLight TrafficLight) {
 		tLight.activeCell += 1
 		time.Sleep(time.Duration(tLight.sleep) * time.Millisecond)
 	}
+}
+
+func getNextPos(car Car) int {
+	var aheadPos Cell
+
+	switch car.route[car.routeIndex+1] {
+	case "U":
+		aheadPos = Cell{car.pos.x, car.pos.y - 1}
+	case "R":
+		aheadPos = Cell{car.pos.x + 1, car.pos.y}
+	case "D":
+		aheadPos = Cell{car.pos.x, car.pos.y + 1}
+	case "L":
+		aheadPos = Cell{car.pos.x - 1, car.pos.y}
+	}
+
+	return grid[aheadPos.y][aheadPos.x]
 }
 
 func (g *Game) Update() error {
