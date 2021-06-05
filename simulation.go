@@ -135,14 +135,10 @@ func moveCar(car Car) {
 		if grid[car.pos.y][car.pos.x] == 0 && (gridTLights[car.pos.y][car.pos.x] == 0 || car.inCrossing) {
 			grid[car.prevPos.y][car.prevPos.x] = 0
 			grid[car.pos.y][car.pos.x] = car.id
-		} /*else if grid[car.pos.y][car.pos.x] != 0 && car.sleep < cars[grid[car.pos.y][car.pos.x]-1].sleep {
-			newSleep := cars[grid[car.pos.y][car.pos.x]-1].sleep
-			fmt.Printf("[Car %v]: Speed %v -> %v\n", car.id, math.Abs(float64(car.sleep-30)), math.Abs(float64(newSleep-30)))
-			car.sleep = newSleep
-		}*/
+		}
 
 		// Do not move car if the next cell is not yours
-		if grid[car.pos.y][car.pos.x] == car.id /*|| car.inCrossing*/ {
+		if grid[car.pos.y][car.pos.x] == car.id {
 			switch car.route[car.routeIndex] {
 			case "U":
 				car.gridPos.y -= 1
