@@ -31,8 +31,7 @@ var (
 	carSprites     map[string]*ebiten.Image
 	cars           []Car
 	trafficLights  []TrafficLight
-	grid           [28][28]int
-	gridTLights    [28][28]int
+	grid           [2][28][28]int
 	finishedCars   []Car
 	carsFinished   int
 	routeDisplayed int
@@ -131,22 +130,22 @@ func moveCar(car Car) {
 		}
 
 		// Check if the traffic light is open
-		if gridTLights[car.pos.y][car.pos.x] == 1 {
+		if grid[1][car.pos.y][car.pos.x] == 1 {
 			car.inCrossing = true
-		} else if gridTLights[car.pos.y][car.pos.x] == 0 {
+		} else if grid[1][car.pos.y][car.pos.x] == 0 {
 			car.inCrossing = false
 		}
 
 		/*Try to occupy the needed cell.
 		If the car is already in a crossing it will try to move
 		until it exit the intersection*/
-		if grid[car.pos.y][car.pos.x] == 0 && (gridTLights[car.pos.y][car.pos.x] == 0 || car.inCrossing) {
-			grid[car.prevPos.y][car.prevPos.x] = 0
-			grid[car.pos.y][car.pos.x] = car.id
+		if grid[0][car.pos.y][car.pos.x] == 0 && (grid[1][car.pos.y][car.pos.x] == 0 || car.inCrossing) {
+			grid[0][car.prevPos.y][car.prevPos.x] = 0
+			grid[0][car.pos.y][car.pos.x] = car.id
 		}
 
 		// Do not move car if the next cell is not yours
-		if grid[car.pos.y][car.pos.x] == car.id {
+		if grid[0][car.pos.y][car.pos.x] == car.id {
 			switch car.route[car.routeIndex] {
 			case "U":
 				car.gridPos.y -= 1
@@ -167,7 +166,7 @@ func moveCar(car Car) {
 	}
 	finishedCars[carsFinished] = car
 	carsFinished += 1
-	grid[car.pos.y][car.pos.x] = 0
+	grid[0][car.pos.y][car.pos.x] = 0
 	car.active = false
 	cars[car.id-1] = car
 }
@@ -181,9 +180,9 @@ func changeTrafficLight(tLight TrafficLight) {
 
 		for i := 0; i < len(tLight.cells); i++ {
 			if i != tLight.activeCell {
-				gridTLights[tLight.cells[i].y][tLight.cells[i].x] = 2
+				grid[1][tLight.cells[i].y][tLight.cells[i].x] = 2
 			} else {
-				gridTLights[tLight.cells[i].y][tLight.cells[i].x] = 1
+				grid[1][tLight.cells[i].y][tLight.cells[i].x] = 1
 			}
 		}
 
@@ -208,7 +207,7 @@ func getNextPos(car Car) int {
 		aheadPos = Cell{car.pos.x - 1, car.pos.y}
 	}
 
-	return grid[aheadPos.y][aheadPos.x]
+	return grid[0][aheadPos.y][aheadPos.x]
 }
 
 func (g *Game) Update() error {
@@ -293,7 +292,7 @@ func drawTrafficLights(screen *ebiten.Image) {
 	var options *ebiten.DrawImageOptions
 	for i := 0; i < len(trafficLights); i++ {
 		for j := 0; j < len(trafficLights[i].cells); j++ {
-			if gridTLights[trafficLights[i].cells[j].y][trafficLights[i].cells[j].x] == 2 {
+			if grid[1][trafficLights[i].cells[j].y][trafficLights[i].cells[j].x] == 2 {
 				options = new(ebiten.DrawImageOptions)
 				options.GeoM.Translate(
 					float64(trafficLights[i].cells[j].x*CellSize),
@@ -308,12 +307,14 @@ func drawTrafficLights(screen *ebiten.Image) {
 
 func drawLog(screen *ebiten.Image) {
 	carLen := fmt.Sprintf("%d", len(cars))
+	tlLen := fmt.Sprintf("%d", len(trafficLights))
 
 	ebitenutil.DebugPrintAt(screen, "City Traffic Simulation", LogStart, LogLineHeight*0)
 	ebitenutil.DebugPrintAt(screen, "Simulating a total of "+carLen+" cars.", LogStart, LogLineHeight*1)
+	ebitenutil.DebugPrintAt(screen, "Simulating a total of "+tlLen+" traffic lights.", LogStart, LogLineHeight*2)
 
-	ebitenutil.DebugPrintAt(screen, "Cars that have completed their route:", LogStart, LogLineHeight*3)
-	line := 4
+	ebitenutil.DebugPrintAt(screen, "Cars that have completed their route:", LogStart, LogLineHeight*4)
+	line := 5
 	for i := 0; i < len(finishedCars); i++ {
 		if finishedCars[i].id != 0 {
 			idStr := fmt.Sprintf("%d", finishedCars[i].id)
@@ -374,7 +375,7 @@ func initCity(newCars []Car, tLights []TrafficLight) {
 
 	// Let the cars occupy their initial cell
 	for i := 0; i < len(cars); i++ {
-		grid[cars[i].pos.y][cars[i].pos.x] = cars[i].id
+		grid[0][cars[i].pos.y][cars[i].pos.x] = cars[i].id
 		go moveCar(cars[i])
 	}
 
@@ -388,7 +389,7 @@ func initCity(newCars []Car, tLights []TrafficLight) {
 		for j := 0; j < lenCells; j++ {
 			xMap[trafficLights[i].cells[j].x] += 1
 			yMap[trafficLights[i].cells[j].y] += 1
-			gridTLights[trafficLights[i].cells[j].y][trafficLights[i].cells[j].x] = 2
+			grid[1][trafficLights[i].cells[j].y][trafficLights[i].cells[j].x] = 2
 		}
 
 		// Fill missing intersection cell with a "free" space
@@ -407,7 +408,7 @@ func initCity(newCars []Car, tLights []TrafficLight) {
 					break
 				}
 			}
-			gridTLights[yCoord][xCoord] = 1
+			grid[1][yCoord][xCoord] = 1
 		}
 
 		go changeTrafficLight(trafficLights[i])

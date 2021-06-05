@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"fmt"
 	"math/rand"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -89,7 +91,7 @@ func generateRoute(grid [][]string) ([]string, Cell, Cell) {
 
 	// Get random route with length [25, 30]
 	rand.Seed(time.Now().UnixNano())
-	length := rand.Intn(30-25) + 25
+	length := rand.Intn(50-45) + 45
 
 	// Get random initial position
 	start := Cell{rand.Intn(len(grid)), rand.Intn(len(grid[0]))}
@@ -205,11 +207,42 @@ func getLastPosition(x int, y int, lastDir string) Cell {
 
 func main() {
 
+	argsLen := len(os.Args[1:])
+	numCars := 30
+	numLights := 12
+
+	if argsLen == 2 {
+		if v, err := strconv.Atoi(os.Args[1]); err == nil {
+			if v > 0 && v < 31 {
+				numCars = v
+			} else {
+				fmt.Println("[ERROR]: Number of cars must be in range [1,30]")
+				os.Exit(0)
+			}
+		} else {
+			fmt.Println("[ERROR]: Number of cars <arg> must be of type int")
+			os.Exit(0)
+		}
+		if v, err := strconv.Atoi(os.Args[2]); err == nil {
+			if v > -1 && v < 13 {
+				numLights = v
+			} else {
+				fmt.Println("[ERROR]: Number of street lights must be in range [0,12]")
+				os.Exit(0)
+			}
+		} else {
+			fmt.Println("[ERROR]: Number of street lights <arg> must be of type int")
+			os.Exit(0)
+		}
+	} else if argsLen != 0 {
+		fmt.Println("[ERROR]: Usage ./main.out <number of cars> <number of street lights>")
+		os.Exit(0)
+	}
+
 	// Read grid file
 	generationGrid, _ := csvToArray("grid.txt")
 
 	// Initialize cars
-	numCars := 30
 	cars := make([]Car, numCars)
 	for i := 0; i < numCars; i++ {
 		route, start, end := generateRoute(generationGrid)
@@ -231,7 +264,6 @@ func main() {
 		//fmt.Printf("[Car %v]: Original speed %v\n", i, math.Abs(float64(speed-30)))
 	}
 
-	numLights := 12
 	trafficLights := make([]TrafficLight, numLights)
 	for i := 0; i < numLights; i++ {
 		trafficLights[i] = TrafficLight{
