@@ -2,8 +2,6 @@ package main
 
 import (
 	"bufio"
-	"fmt"
-	"math"
 	"math/rand"
 	"os"
 	"strings"
@@ -230,7 +228,7 @@ func main() {
 			active:        true,
 			inCrossing:    false,
 		}
-		fmt.Printf("[Car %v]: Original speed %v\n", i, math.Abs(float64(speed-30)))
+		//fmt.Printf("[Car %v]: Original speed %v\n", i, math.Abs(float64(speed-30)))
 	}
 
 	numLights := 12
