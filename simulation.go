@@ -47,7 +47,7 @@ func init() {
 
 func loadImages() error {
 	var err error
-	imgBackground, _, err = ebitenutil.NewImageFromFile("res/background.png")
+	imgBackground, _, err = ebitenutil.NewImageFromFile("res/backgroundDetailed.png")
 	if err != nil {
 		return err
 	}
