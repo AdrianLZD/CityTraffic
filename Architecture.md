@@ -48,6 +48,8 @@ implementation:
 ● GAME: Class where everything is managed.
 ```
 You can appreciate the UML in the image below:
+![](res/arch.png)
+
 
 ## Function Description
 
