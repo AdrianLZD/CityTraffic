@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	_ "image/png"
 	"log"
 	"math"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -15,19 +18,24 @@ type Game struct{}
 
 const (
 	GUIHeight     = 616
-	GUIWidth      = 616
+	GUIWidth      = 900
+	LogStart      = 620
+	LogLineHeight = 14
 	CellSize      = 22
 	StartWaitTime = 4000
 )
 
 var (
-	imgBackground *ebiten.Image
-	imgLight      *ebiten.Image
-	carSprites    map[string]*ebiten.Image
-	cars          []Car
-	trafficLights []TrafficLight
-	grid          [28][28]int
-	gridTLights   [28][28]int
+	imgBackground  *ebiten.Image
+	imgLight       *ebiten.Image
+	carSprites     map[string]*ebiten.Image
+	cars           []Car
+	trafficLights  []TrafficLight
+	grid           [28][28]int
+	gridTLights    [28][28]int
+	finishedCars   []Car
+	carsFinished   int
+	routeDisplayed int
 )
 
 func init() {
@@ -107,7 +115,7 @@ func moveCar(car Car) {
 				// Id there is no car in advance and speed had been reduced return to original speed
 				nextPos := getNextPos(car)
 				if nextPos == 0 && car.sleep != car.originalSleep {
-					fmt.Printf("[Car %v]: Speed %v <- %v\n", car.id, math.Abs(float64(car.sleep-30)), math.Abs(float64(car.originalSleep-30)))
+					//fmt.Printf("[Car %v]: Speed %v <- %v\n", car.id, math.Abs(float64(car.sleep-30)), math.Abs(float64(car.originalSleep-30)))
 					car.sleep = car.originalSleep
 				}
 			}
@@ -117,7 +125,7 @@ func moveCar(car Car) {
 			nextPos := getNextPos(car)
 			if nextPos != 0 && car.sleep < cars[nextPos-1].sleep {
 				newSleep := cars[nextPos-1].sleep
-				fmt.Printf("[Car %v]: Speed %v -> %v\n", car.id, math.Abs(float64(car.sleep-30)), math.Abs(float64(newSleep-30)))
+				//fmt.Printf("[Car %v]: Speed %v -> %v\n", car.id, math.Abs(float64(car.sleep-30)), math.Abs(float64(newSleep-30)))
 				car.sleep = newSleep
 			}
 		}
@@ -157,7 +165,8 @@ func moveCar(car Car) {
 		// Controls the car's speed
 		time.Sleep(time.Duration(car.sleep) * time.Millisecond)
 	}
-
+	finishedCars[carsFinished] = car
+	carsFinished += 1
 	grid[car.pos.y][car.pos.x] = 0
 	car.active = false
 	cars[car.id-1] = car
@@ -208,8 +217,57 @@ func (g *Game) Update() error {
 
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(imgBackground, nil)
+	drawCarRoute(screen)
 	drawCars(screen)
 	drawTrafficLights(screen)
+	drawLog(screen)
+}
+
+func drawCarRoute(screen *ebiten.Image) {
+	if routeDisplayed < 1 {
+		return
+	}
+	var options *ebiten.DrawImageOptions
+	posToGrid := Cell{cars[routeDisplayed-1].start.x * CellSize, cars[routeDisplayed-1].start.y * CellSize}
+
+	// Display the starting cell
+	options = new(ebiten.DrawImageOptions)
+	options.GeoM.Translate(
+		float64(posToGrid.x),
+		float64(posToGrid.y))
+	options.ColorM.RotateHue(180)
+	screen.DrawImage(imgLight, options)
+	ebitenutil.DebugPrintAt(screen, "START", posToGrid.x, posToGrid.y+2)
+
+	// Traverse the instructions and display the resultant cell
+	for i := 0; i < len(cars[routeDisplayed-1].route); i++ {
+		switch cars[routeDisplayed-1].route[i] {
+		case "U":
+			posToGrid = Cell{posToGrid.x, posToGrid.y - CellSize}
+		case "R":
+			posToGrid = Cell{posToGrid.x + CellSize, posToGrid.y}
+		case "D":
+			posToGrid = Cell{posToGrid.x, posToGrid.y + CellSize}
+		case "L":
+			posToGrid = Cell{posToGrid.x - CellSize, posToGrid.y}
+		}
+
+		options = new(ebiten.DrawImageOptions)
+		options.GeoM.Translate(
+			float64(posToGrid.x),
+			float64(posToGrid.y),
+		)
+
+		// Check if this is the END cell
+		if i != len(cars[routeDisplayed-1].route)-1 {
+			screen.DrawImage(imgLight, options)
+		} else {
+			options.ColorM.RotateHue(180)
+			screen.DrawImage(imgLight, options)
+			ebitenutil.DebugPrintAt(screen, "END", posToGrid.x, posToGrid.y+2)
+		}
+
+	}
 }
 
 func drawCars(screen *ebiten.Image) {
@@ -225,6 +283,8 @@ func drawCars(screen *ebiten.Image) {
 				sprite = 0
 			}
 			screen.DrawImage(carSprites[cars[i].route[sprite]], options)
+			sleepStr := fmt.Sprintf("%.0f", math.Abs(float64(cars[i].sleep-30)))
+			ebitenutil.DebugPrintAt(screen, sleepStr, cars[i].gridPos.x+CellSize/2, cars[i].gridPos.y-CellSize/2)
 		}
 	}
 }
@@ -246,16 +306,71 @@ func drawTrafficLights(screen *ebiten.Image) {
 	}
 }
 
+func drawLog(screen *ebiten.Image) {
+	carLen := fmt.Sprintf("%d", len(cars))
+
+	ebitenutil.DebugPrintAt(screen, "City Traffic Simulation", LogStart, LogLineHeight*0)
+	ebitenutil.DebugPrintAt(screen, "Simulating a total of "+carLen+" cars.", LogStart, LogLineHeight*1)
+
+	ebitenutil.DebugPrintAt(screen, "Cars that have completed their route:", LogStart, LogLineHeight*3)
+	line := 4
+	for i := 0; i < len(finishedCars); i++ {
+		if finishedCars[i].id != 0 {
+			idStr := fmt.Sprintf("%d", finishedCars[i].id)
+			startStr := fmt.Sprintf("[%d, %d]", finishedCars[i].start.x, finishedCars[i].start.y)
+			endStr := fmt.Sprintf("[%d, %d]", finishedCars[i].end.x, finishedCars[i].end.y)
+
+			toPrint := "Car " + idStr + " (Start: " + startStr + " Finish: " + endStr + ")"
+			ebitenutil.DebugPrintAt(screen, toPrint, LogStart, LogLineHeight*line)
+			line += 1
+		}
+	}
+}
+
 func (g *Game) Layout(outsideWidth, outsideHeight int) (screenWidth, screenHeight int) {
 	return GUIWidth, GUIHeight
 }
 
+func readInput(scanner *bufio.Scanner) {
+	for scanner.Scan() {
+		text := scanner.Text()
+		id, err := strconv.Atoi(text)
+		if err != nil || id > len(finishedCars) {
+			fmt.Println("Please enter a valid ID")
+			fmt.Print("Enter a car ID: ")
+			continue
+		}
+
+		carFound := false
+		for i := 0; i < len(finishedCars); i++ {
+			if finishedCars[i].id == id {
+				routeDisplayed = id
+				fmt.Println(finishedCars[i].route)
+				fmt.Println("Displaying route for Car " + text)
+				fmt.Print("Enter a car ID: ")
+				carFound = true
+				break
+			}
+		}
+		if !carFound {
+			fmt.Println("Car " + text + " has not finished its route")
+			fmt.Print("Enter a car ID: ")
+		}
+
+	}
+
+}
+
 func initCity(newCars []Car, tLights []TrafficLight) {
 	cars = newCars
+	finishedCars = make([]Car, len(cars))
 	trafficLights = tLights
 	ebiten.SetWindowSize(GUIWidth, GUIHeight)
 	ebiten.SetWindowTitle("City Traffic")
-	fmt.Println("City")
+	fmt.Println("City Traffic Simulation")
+	fmt.Println("To see the route of a car type its ID")
+	fmt.Print("Enter a car ID: ")
+	go readInput(bufio.NewScanner(os.Stdin))
 
 	// Let the cars occupy their initial cell
 	for i := 0; i < len(cars); i++ {
@@ -299,11 +414,12 @@ func initCity(newCars []Car, tLights []TrafficLight) {
 	}
 
 	if err := ebiten.RunGame(&Game{}); err != nil {
+
 		log.Fatal(err)
 	}
-
-	for i := range grid {
-		fmt.Println(grid[i])
-	}
+	/*
+		for i := range grid {
+			fmt.Println(grid[i])
+		}*/
 
 }
