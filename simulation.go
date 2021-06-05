@@ -349,7 +349,7 @@ func readInput(scanner *bufio.Scanner) {
 	for scanner.Scan() {
 		text := scanner.Text()
 		id, err := strconv.Atoi(text)
-		if err != nil || id > len(finishedCars) {
+		if err != nil || id > len(finishedCars) || id < 1 {
 			routeDisplayed = 0
 			fmt.Println("Please enter a valid ID")
 			fmt.Print("Enter a car ID: ")
