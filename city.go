@@ -26,6 +26,7 @@ type Car struct {
 	routeIndex    int
 	active        bool
 	inCrossing    bool
+	opacity       float64
 }
 
 type TrafficLight struct {
@@ -227,6 +228,7 @@ func main() {
 			routeIndex:    -1,
 			active:        true,
 			inCrossing:    false,
+			opacity:       1,
 		}
 		//fmt.Printf("[Car %v]: Original speed %v\n", i, math.Abs(float64(speed-30)))
 	}

@@ -169,11 +169,21 @@ func moveCar(car Car) {
 		// Controls the car's speed
 		time.Sleep(time.Duration(car.sleep) * time.Millisecond)
 	}
+
+	//Rules to stop car in simulation
 	finishedCars[carsFinished] = car
 	carsFinished += 1
 	grid[car.pos.y][car.pos.x] = 0
 	car.active = false
 	cars[car.id-1] = car
+
+	// Creates a fade out effect
+	for car.opacity >= 0 {
+		car.opacity -= 0.05
+		cars[car.id-1] = car
+		time.Sleep(time.Duration(100) * time.Millisecond)
+	}
+
 }
 
 func changeTrafficLight(tLight TrafficLight) {
@@ -277,18 +287,21 @@ func drawCarRoute(screen *ebiten.Image) {
 func drawCars(screen *ebiten.Image) {
 	var options *ebiten.DrawImageOptions
 	for i := 0; i < len(cars); i++ {
+		options = new(ebiten.DrawImageOptions)
+		options.GeoM.Translate(
+			float64(cars[i].gridPos.x),
+			float64(cars[i].gridPos.y))
+		sprite := cars[i].routeIndex
+		if sprite < 0 {
+			sprite = 0
+		}
 		if cars[i].active {
-			options = new(ebiten.DrawImageOptions)
-			options.GeoM.Translate(
-				float64(cars[i].gridPos.x),
-				float64(cars[i].gridPos.y))
-			sprite := cars[i].routeIndex
-			if sprite < 0 {
-				sprite = 0
-			}
 			screen.DrawImage(carSprites[cars[i].route[sprite]], options)
 			sleepStr := fmt.Sprintf("%.0f", math.Abs(float64(cars[i].sleep-30)))
 			ebitenutil.DebugPrintAt(screen, sleepStr, cars[i].gridPos.x+CellSize/2, cars[i].gridPos.y-CellSize/2)
+		} else if cars[i].opacity > 0 {
+			options.ColorM.Scale(1, 1, 1, cars[i].opacity)
+			screen.DrawImage(carSprites[cars[i].route[len(cars[i].route)-1]], options)
 		}
 	}
 }
