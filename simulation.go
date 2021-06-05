@@ -26,15 +26,17 @@ const (
 )
 
 var (
-	imgBackground  *ebiten.Image
-	imgLight       *ebiten.Image
-	carSprites     map[string]*ebiten.Image
-	cars           []Car
-	trafficLights  []TrafficLight
-	grid           [2][28][28]int
-	finishedCars   []Car
-	carsFinished   int
-	routeDisplayed int
+	imgBackground       *ebiten.Image
+	imgLight            *ebiten.Image
+	imgPath             *ebiten.Image
+	carSprites          map[string]*ebiten.Image
+	trafficLightSprites [2][4]*ebiten.Image
+	cars                []Car
+	trafficLights       []TrafficLight
+	grid                [2][28][28]int
+	finishedCars        []Car
+	carsFinished        int
+	routeDisplayed      int
 )
 
 func init() {
@@ -76,6 +78,59 @@ func loadImages() error {
 	carSprites["L"] = imgCarL
 
 	imgLight, _, err = ebitenutil.NewImageFromFile("res/trafficLight.png")
+	if err != nil {
+		return err
+	}
+
+	imgRedD, _, err := ebitenutil.NewImageFromFile("res/redD.png")
+	if err != nil {
+		return err
+	}
+	trafficLightSprites[0][0] = imgRedD
+
+	imgRedL, _, err := ebitenutil.NewImageFromFile("res/redL.png")
+	if err != nil {
+		return err
+	}
+	trafficLightSprites[0][1] = imgRedL
+
+	imgRedU, _, err := ebitenutil.NewImageFromFile("res/redU.png")
+	if err != nil {
+		return err
+	}
+	trafficLightSprites[0][2] = imgRedU
+
+	imgRedR, _, err := ebitenutil.NewImageFromFile("res/redR.png")
+	if err != nil {
+		return err
+	}
+	trafficLightSprites[0][3] = imgRedR
+
+	imgGreenD, _, err := ebitenutil.NewImageFromFile("res/greenD.png")
+	if err != nil {
+		return err
+	}
+	trafficLightSprites[1][0] = imgGreenD
+
+	imgGreenL, _, err := ebitenutil.NewImageFromFile("res/greenL.png")
+	if err != nil {
+		return err
+	}
+	trafficLightSprites[1][1] = imgGreenL
+
+	imgGreenU, _, err := ebitenutil.NewImageFromFile("res/greenU.png")
+	if err != nil {
+		return err
+	}
+	trafficLightSprites[1][2] = imgGreenU
+
+	imgGreenR, _, err := ebitenutil.NewImageFromFile("res/greenR.png")
+	if err != nil {
+		return err
+	}
+	trafficLightSprites[1][3] = imgGreenR
+
+	imgPath, _, err = ebitenutil.NewImageFromFile("res/path.png")
 	if err != nil {
 		return err
 	}
@@ -269,7 +324,7 @@ func drawCarRoute(screen *ebiten.Image) {
 
 		// Check if this is the END cell
 		if i != len(cars[routeDisplayed-1].route)-1 {
-			screen.DrawImage(imgLight, options)
+			screen.DrawImage(imgPath, options)
 		} else {
 			options.ColorM.RotateHue(180)
 			screen.DrawImage(imgLight, options)
@@ -311,7 +366,9 @@ func drawTrafficLights(screen *ebiten.Image) {
 					float64(trafficLights[i].cells[j].x*CellSize),
 					float64(trafficLights[i].cells[j].y*CellSize),
 				)
-				screen.DrawImage(imgLight, options)
+				screen.DrawImage(trafficLightSprites[0][j], options)
+			} else {
+				screen.DrawImage(trafficLightSprites[1][j], options)
 			}
 
 		}

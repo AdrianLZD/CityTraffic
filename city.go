@@ -228,15 +228,15 @@ func main() {
 			if v > -1 && v < 13 {
 				numLights = v
 			} else {
-				fmt.Println("[ERROR]: Number of street lights must be in range [0,12]")
+				fmt.Println("[ERROR]: Number of traffic lights must be in range [0,12]")
 				os.Exit(0)
 			}
 		} else {
-			fmt.Println("[ERROR]: Number of street lights <arg> must be of type int")
+			fmt.Println("[ERROR]: Number of traffic lights <arg> must be of type int")
 			os.Exit(0)
 		}
 	} else if argsLen != 0 {
-		fmt.Println("[ERROR]: Usage ./main.out <number of cars> <number of street lights>")
+		fmt.Println("[ERROR]: Usage ./main.out <number of cars> <number of traffic lights>")
 		os.Exit(0)
 	}
 
