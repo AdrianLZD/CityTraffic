@@ -30,7 +30,7 @@ var (
 	imgLight            *ebiten.Image
 	imgPath             *ebiten.Image
 	carSprites          map[string]*ebiten.Image
-	trafficLightSprites [2][4]*ebiten.Image
+	trafficLightSprites [2]*ebiten.Image
 	cars                []Car
 	trafficLights       []TrafficLight
 	grid                [2][28][28]int
@@ -82,53 +82,17 @@ func loadImages() error {
 		return err
 	}
 
-	imgRedD, _, err := ebitenutil.NewImageFromFile("res/redD.png")
+	imgRedLight, _, err := ebitenutil.NewImageFromFile("res/redLight.png")
 	if err != nil {
 		return err
 	}
-	trafficLightSprites[0][0] = imgRedD
+	trafficLightSprites[0] = imgRedLight
 
-	imgRedL, _, err := ebitenutil.NewImageFromFile("res/redL.png")
+	imgGreenLight, _, err := ebitenutil.NewImageFromFile("res/greenLight.png")
 	if err != nil {
 		return err
 	}
-	trafficLightSprites[0][1] = imgRedL
-
-	imgRedU, _, err := ebitenutil.NewImageFromFile("res/redU.png")
-	if err != nil {
-		return err
-	}
-	trafficLightSprites[0][2] = imgRedU
-
-	imgRedR, _, err := ebitenutil.NewImageFromFile("res/redR.png")
-	if err != nil {
-		return err
-	}
-	trafficLightSprites[0][3] = imgRedR
-
-	imgGreenD, _, err := ebitenutil.NewImageFromFile("res/greenD.png")
-	if err != nil {
-		return err
-	}
-	trafficLightSprites[1][0] = imgGreenD
-
-	imgGreenL, _, err := ebitenutil.NewImageFromFile("res/greenL.png")
-	if err != nil {
-		return err
-	}
-	trafficLightSprites[1][1] = imgGreenL
-
-	imgGreenU, _, err := ebitenutil.NewImageFromFile("res/greenU.png")
-	if err != nil {
-		return err
-	}
-	trafficLightSprites[1][2] = imgGreenU
-
-	imgGreenR, _, err := ebitenutil.NewImageFromFile("res/greenR.png")
-	if err != nil {
-		return err
-	}
-	trafficLightSprites[1][3] = imgGreenR
+	trafficLightSprites[1] = imgGreenLight
 
 	imgPath, _, err = ebitenutil.NewImageFromFile("res/path.png")
 	if err != nil {
@@ -282,8 +246,8 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	screen.DrawImage(imgBackground, nil)
 	drawCarRoute(screen)
-	drawCars(screen)
 	drawTrafficLights(screen)
+	drawCars(screen)
 	drawLog(screen)
 }
 
@@ -359,16 +323,18 @@ func drawCars(screen *ebiten.Image) {
 func drawTrafficLights(screen *ebiten.Image) {
 	var options *ebiten.DrawImageOptions
 	for i := 0; i < len(trafficLights); i++ {
-		for j := 0; j < len(trafficLights[i].cells); j++ {
-			if grid[1][trafficLights[i].cells[j].y][trafficLights[i].cells[j].x] == 2 {
-				options = new(ebiten.DrawImageOptions)
-				options.GeoM.Translate(
-					float64(trafficLights[i].cells[j].x*CellSize),
-					float64(trafficLights[i].cells[j].y*CellSize),
-				)
-				screen.DrawImage(trafficLightSprites[0][j], options)
+		cellsAmount := len(trafficLights[i].cells)
+		for j := 0; j < cellsAmount; j++ {
+			options = new(ebiten.DrawImageOptions)
+			options.GeoM.Translate(
+				float64(trafficLights[i].cells[j].x*CellSize),
+				float64(trafficLights[i].cells[j].y*CellSize),
+			)
+
+			if grid[1][trafficLights[i].cells[j].y][trafficLights[i].cells[j].x] == 1 {
+				screen.DrawImage(trafficLightSprites[1], options)
 			} else {
-				screen.DrawImage(trafficLightSprites[1][j], options)
+				screen.DrawImage(trafficLightSprites[0], options)
 			}
 
 		}

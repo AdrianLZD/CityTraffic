@@ -32,10 +32,11 @@ type Car struct {
 }
 
 type TrafficLight struct {
-	id         int
-	cells      []Cell
-	activeCell int
-	sleep      int
+	id          int
+	cells       []Cell
+	activeCell  int
+	missingCell int
+	sleep       int
 }
 
 var (
@@ -272,7 +273,12 @@ func main() {
 			id:         i + 1,
 			cells:      trafficLightsPositions[i],
 			activeCell: 0,
-			sleep:      3000,
+			/* No traffic light has a cell missing by its own,
+			a missing cell it is determined by the simulation space.
+			Therefore, it needs to be set up while initializing a city.
+			*/
+			missingCell: -1,
+			sleep:       3000,
 		}
 	}
 
